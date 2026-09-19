@@ -1,0 +1,39 @@
+pipeline{
+
+agent any
+    environment{
+        path ="$PATH:/opt/apache-maven-3.9.16/bin"
+    }
+
+    stages{
+        stage('Get the Code'){
+            steps{
+                git'https://github.com/girirajhadake/100-Maven-webapp.git'
+            }
+        }
+
+        stage('Build the Code'){
+            steps{
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Code Review'){
+            steps{
+                withSonarQubeEnv('Sonar-Server-25.12'){
+                sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.token=squ_84d324be25f255a1649c2c87831b959a647be9ac'
+                }
+            }
+        }
+
+        stage('Deploy the Code'){
+            steps{
+                sshagent(credentials: ['apache-tomcat-key'], executable: '') {
+    // some block
+                sh 'scp -o StrictHostKeyChecking=no target/100-maven-web-app.war ec2-user@13.201.81.105:/home/ec2-user/apache-tomcat-10.0.23/webapps'
+                
+                }  
+            }
+        }
+    }
+}
